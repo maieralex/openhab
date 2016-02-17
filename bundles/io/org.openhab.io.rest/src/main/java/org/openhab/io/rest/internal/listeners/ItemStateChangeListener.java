@@ -1,30 +1,10 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.io.rest.internal.listeners;
 
@@ -35,9 +15,10 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 import org.openhab.core.items.Item;
-import org.openhab.io.rest.internal.RESTApplication;
+import org.openhab.io.rest.RESTApplication;
 import org.openhab.io.rest.internal.resources.ItemResource;
 import org.openhab.io.rest.internal.resources.ResponseTypeHelper;
+import org.openhab.ui.items.ItemUIRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,14 +59,17 @@ public class ItemStateChangeListener extends ResourceStateChangeListener {
 				String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+(request.getContextPath().equals("null")?"":request.getContextPath())+ RESTApplication.REST_SERVLET_ALIAS +"/";
 				if (pathInfo.startsWith("/" + ItemResource.PATH_ITEMS)) {
 		        	String[] pathSegments = pathInfo.substring(1).split("/");
+		        	Item item = null;
 		            if(pathSegments.length>=2) {
 		            	String itemName = pathSegments[1];
-						Item item = ItemResource.getItem(itemName);
-						if(item!=null) {
-			            	Object itemBean = ItemResource.createItemBean(item, true, basePath);	    	
-			            	return itemBean;
-						}
+						item = ItemResource.getItem(itemName);
+		            } else {
+		            	item = lastChange;
 		            }
+		            if(item!=null) {
+		            	Object itemBean = ItemResource.createItemBean(item, true, basePath);	    	
+		            	return itemBean;
+					}
 		        }
 			}
 		}
@@ -111,6 +95,15 @@ public class ItemStateChangeListener extends ResourceStateChangeListener {
 
             if(pathSegments.length>=2) {
             	return Collections.singleton(pathSegments[1]);
+            } else if (pathSegments.length == 1) {
+            	ItemUIRegistry registry = RESTApplication.getItemUIRegistry();
+                if(registry!=null) {
+                	final Set<String> set = new HashSet<String>();
+                	for (Item item : registry.getItems()) {
+                		set.add(item.getName());
+                	}
+                	return set;
+                }
             }
         }
         return new HashSet<String>();

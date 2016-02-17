@@ -1,47 +1,54 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.model.valueconverter;
 
 import org.eclipse.xtext.common.services.DefaultTerminalConverters;
 import org.eclipse.xtext.conversion.IValueConverter;
 import org.eclipse.xtext.conversion.ValueConverter;
+import org.eclipse.xtext.conversion.impl.AbstractNullSafeConverter;
 import org.eclipse.xtext.conversion.impl.STRINGValueConverter;
+import org.eclipse.xtext.nodemodel.INode;
 
 import com.google.inject.Inject;
+import java.util.regex.Pattern;
 
 public class SitemapConverters extends DefaultTerminalConverters {
+
+	private static final Pattern ID_PATTERN = Pattern.compile("\\p{Alpha}\\w*");
 
 	@Inject
 	private STRINGValueConverter stringValueConverter;
 
-	 @ValueConverter(rule = "Icon")
-	 public IValueConverter<String> BIG_DECIMAL() {
-	   return stringValueConverter;
-	 }
+	@ValueConverter(rule = "Icon")
+	public IValueConverter<String> BIG_DECIMAL() {
+		return stringValueConverter;
+	}
+
+	@ValueConverter(rule = "Command")
+	public IValueConverter<String> Command() {
+		return new AbstractNullSafeConverter<String>() {
+			@Override
+			protected String internalToValue(String string, INode node) {
+				if((string.startsWith("'") && string.endsWith("'"))||(string.startsWith("\"") && string.endsWith("\""))) {
+					return STRING().toValue(string, node);
+				}
+				return ID().toValue(string, node);
+			}
+
+			@Override
+			protected String internalToString(String value) {
+				if(ID_PATTERN.matcher(value).matches()) {
+					return ID().toString(value);
+				} else {
+					return STRING().toString(value);
+				}
+			}
+		};
+	}
 }

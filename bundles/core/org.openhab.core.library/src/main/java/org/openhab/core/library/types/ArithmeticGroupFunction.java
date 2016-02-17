@@ -1,36 +1,18 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.core.library.types;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openhab.core.items.GroupFunction;
 import org.openhab.core.items.Item;
@@ -77,7 +59,7 @@ public interface ArithmeticGroupFunction extends GroupFunction {
 		public State calculate(List<Item> items) {
 			if(items!=null && items.size()>0) {
 				for(Item item : items) {
-					if(!activeState.equals(item.getState())) {
+					if(!activeState.equals(item.getStateAs(activeState.getClass()))) {
 						return passiveState;
 					}
 				}
@@ -152,7 +134,7 @@ public interface ArithmeticGroupFunction extends GroupFunction {
 		public State calculate(List<Item> items) {	
 			if(items!=null) {
 				for(Item item : items) {
-					if(activeState.equals(item.getState())) {
+					if(activeState.equals(item.getStateAs(activeState.getClass()))) {
 						return activeState;
 					}
 				}
@@ -270,6 +252,58 @@ public interface ArithmeticGroupFunction extends GroupFunction {
 			}
 		}
 		
+		/**
+		 * @{inheritDoc
+		 */
+		public State getStateAs(List<Item> items, Class<? extends State> stateClass) {
+			State state = calculate(items);
+			if(stateClass.isInstance(state)) {
+				return state;
+			} else {
+				return null;
+			}
+		}
+	}
+	
+	/**
+	 * This calculates the number of items in the group matching the
+	 * regular expression passed in parameter
+	 * Group:String:COUNT(".") will count all items having a string state of one character
+	 * Group:String:COUNT("[5-9]") will count all items having a string state between 5 and 9
+	 * ...
+	 * 
+	 * @author Gaël L'hopital
+	 * @since 1.7.0
+	 *
+	 */
+	static class Count implements GroupFunction {
+		
+		protected final Pattern pattern;
+		
+		public Count(State regExpr) {
+			if(regExpr==null) {
+				throw new IllegalArgumentException("Parameter must not be null!");
+			}
+			this.pattern = Pattern.compile(regExpr.toString());
+		}
+
+		/**
+		 * @{inheritDoc
+		 */
+		public State calculate(List<Item> items) {
+			int count = 0;
+			if(items!=null) {
+				for(Item item : items) {
+					Matcher matcher = pattern.matcher(item.getState().toString());
+					if (matcher.matches()) {
+						count++;
+					}
+				}
+			}
+			
+			return new DecimalType(count);
+		}
+
 		/**
 		 * @{inheritDoc
 		 */

@@ -1,30 +1,10 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.binding.systeminfo.internal;
 
@@ -38,107 +18,147 @@ import org.openhab.model.item.binding.BindingConfigParseException;
 
 /**
  * This class is responsible for parsing the binding configuration.
- * 
+ *
  * @author Pauli Anttila
  * @since 1.3.0
  */
-public class SysteminfoGenericBindingProvider extends
-		AbstractGenericBindingProvider implements SysteminfoBindingProvider {
+public class SysteminfoGenericBindingProvider extends AbstractGenericBindingProvider
+        implements SysteminfoBindingProvider {
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public String getBindingType() {
-		return "systeminfo";
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getBindingType() {
+        return "systeminfo";
+    }
 
-	/**
-	 * @{inheritDoc
-	 */
-	@Override
-	public void validateItemType(Item item, String bindingConfig) throws BindingConfigParseException {
-		if (!(item instanceof NumberItem || item instanceof StringItem)) {
-			throw new BindingConfigParseException(
-					"item '" + item.getName() + "' is of type '" + item.getClass().getSimpleName()
-					+ "', only NumberItem and StringItem are allowed - please check your *.items configuration");
-		}
-	}
+    /**
+     * @{inheritDoc
+     */
+    @Override
+    public void validateItemType(Item item, String bindingConfig) throws BindingConfigParseException {
+        if (item == null) {
+            throw new BindingConfigParseException(
+                    "item is not permitted to be null.  item must be a non-null NumberItem or StringItem - please check your *.items configuration");
+        } else if (!(item instanceof NumberItem || item instanceof StringItem)) {
+            throw new BindingConfigParseException("item '" + item.getName() + "' is of type '"
+                    + item.getClass().getSimpleName()
+                    + "', only NumberItem and StringItem are allowed - please check your *.items configuration");
+        }
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void processBindingConfiguration(String context, Item item, String bindingConfig) throws BindingConfigParseException {
-		super.processBindingConfiguration(context, item, bindingConfig);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void processBindingConfiguration(String context, Item item, String bindingConfig)
+            throws BindingConfigParseException {
+        super.processBindingConfiguration(context, item, bindingConfig);
 
-		SysteminfoBindingConfig config = new SysteminfoBindingConfig();
+        if (item == null) {
+            throw new BindingConfigParseException("item is not permitted to be null");
+        } else if (bindingConfig == null) {
+            throw new BindingConfigParseException("bindingConfig is not permitted to be null");
+        }
 
-		String[] configParts = bindingConfig.trim().split(":");
+        SysteminfoBindingConfig config = new SysteminfoBindingConfig();
 
-		if (configParts.length < 2 && configParts.length > 3) {
-			throw new BindingConfigParseException("Systeminf binding must contain 2-3 parts separated by ':'");
-		}
+        String[] configParts = bindingConfig.trim().split(":");
 
-		String commandType = configParts[0].trim();
-		
-		try {
-			config.commandType = SysteminfoCommandType.getCommandType(commandType);	
-		} catch (IllegalArgumentException e) {
-			throw new BindingConfigParseException("'" + commandType + "' is not a valid command type" );
-		}
-		
-		try {
-			config.refreshInterval = Integer.valueOf(configParts[1]);
-		} catch (NumberFormatException e) {
-			throw new BindingConfigParseException("'" + configParts[1] + "' is not a valid refresh interval" );
-		}
+        if (configParts.length < 2) {
+            throw new BindingConfigParseException("Systeminfo binding must contain at least 2 parts separated by ':'");
+        }
 
-		if (configParts.length > 2) {
-			config.target = configParts[2].trim();
-		}
+        String commandType = configParts[0].trim();
+        if (configParts.length > 3) {
+            try {
+                int index1 = bindingConfig.indexOf(":");
+                int index2 = bindingConfig.indexOf(":", index1 + 1);
+                if (index1 > 0 && index2 > index1 + 1) {
+                    config.target = bindingConfig.substring(index2 + 1);
+                } else {
+                    throw new BindingConfigParseException("Systeminfo binding must contain 2-3 parts separated by ':'");
+                }
+            } catch (Exception e) {
+                throw new BindingConfigParseException("Systeminfo binding must contain 2-3 parts separated by ':'");
+            }
+        }
 
-		addBindingConfig(item, config);
-	}
+        try {
+            config.commandType = SysteminfoCommandType.getCommandType(commandType);
+        } catch (IllegalArgumentException e) {
+            throw new BindingConfigParseException("'" + commandType + "' is not a valid command type");
+        }
 
-	@Override
-	public SysteminfoCommandType getCommandType(String itemName) {
-		SysteminfoBindingConfig config = (SysteminfoBindingConfig) bindingConfigs.get(itemName);
-		return config != null ? config.commandType : null;
-	}
+        try {
+            config.refreshInterval = Integer.valueOf(configParts[1]);
+        } catch (NumberFormatException e) {
+            throw new BindingConfigParseException("'" + configParts[1] + "' is not a valid refresh interval");
+        }
 
-	@Override
-	public Class<? extends Item> getItemType(String itemName) {
-		SysteminfoBindingConfig config = (SysteminfoBindingConfig) bindingConfigs.get(itemName);
-		return config != null ? config.itemType : null;
-	}
+        if (config.target == null) {
+            if (configParts.length > 2) {
+                config.target = configParts[2].trim();
+            }
+        }
 
-	@Override
-	public int getRefreshInterval(String itemName) {
-		SysteminfoBindingConfig config = (SysteminfoBindingConfig) bindingConfigs.get(itemName);
-		return config != null ? config.refreshInterval : 0;
-	}
+        addBindingConfig(item, config);
+    }
 
-	@Override
-	public String getTarget(String itemName) {
-		SysteminfoBindingConfig config = (SysteminfoBindingConfig) bindingConfigs.get(itemName);
-		return config != null ? config.target : null;
-	}
-	
-	
-	class SysteminfoBindingConfig implements BindingConfig {
+    @Override
+    public SysteminfoCommandType getCommandType(String itemName) {
+        if (itemName == null) {
+            return null;
+        }
 
-		public Class<? extends Item> itemType = null;
-		public SysteminfoCommandType commandType;
-		public int refreshInterval = 0;
-		public String target = null;
+        SysteminfoBindingConfig config = (SysteminfoBindingConfig) bindingConfigs.get(itemName);
+        return config != null ? config.commandType : null;
+    }
 
-		@Override
-		public String toString() {
-			return "SysteminfoBindingConfigElement [" + ", itemType=" + itemType
-					+ ", commandType=" + commandType + ", refreshInterval="
-					+ refreshInterval + ", target=" + target + "]";
-		}
+    @Override
+    public Class<? extends Item> getItemType(String itemName) {
+        if (itemName == null) {
+            return null;
+        }
 
-	}
-	
+        SysteminfoBindingConfig config = (SysteminfoBindingConfig) bindingConfigs.get(itemName);
+        return config != null ? config.itemType : null;
+    }
+
+    @Override
+    public int getRefreshInterval(String itemName) {
+        if (itemName == null) {
+            return 0;
+        }
+
+        SysteminfoBindingConfig config = (SysteminfoBindingConfig) bindingConfigs.get(itemName);
+        return config != null ? config.refreshInterval : 0;
+    }
+
+    @Override
+    public String getTarget(String itemName) {
+        if (itemName == null) {
+            return null;
+        }
+
+        SysteminfoBindingConfig config = (SysteminfoBindingConfig) bindingConfigs.get(itemName);
+        return config != null ? config.target : null;
+    }
+
+    class SysteminfoBindingConfig implements BindingConfig {
+
+        public Class<? extends Item> itemType = null;
+        public SysteminfoCommandType commandType;
+        public int refreshInterval = 0;
+        public String target = null;
+
+        @Override
+        public String toString() {
+            return "SysteminfoBindingConfigElement [" + ", itemType=" + itemType + ", commandType=" + commandType
+                    + ", refreshInterval=" + refreshInterval + ", target=" + target + "]";
+        }
+
+    }
+
 }

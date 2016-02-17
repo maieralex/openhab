@@ -1,30 +1,10 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.core.persistence.extensions;
 
@@ -40,12 +20,11 @@ import org.joda.time.base.AbstractInstant;
 import org.openhab.core.items.Item;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.persistence.FilterCriteria;
+import org.openhab.core.persistence.FilterCriteria.Ordering;
 import org.openhab.core.persistence.HistoricItem;
 import org.openhab.core.persistence.PersistenceService;
 import org.openhab.core.persistence.QueryablePersistenceService;
-import org.openhab.core.persistence.FilterCriteria.Ordering;
 import org.openhab.core.types.State;
-import org.openhab.core.types.UnDefType;
 import org.osgi.service.cm.ConfigurationException;
 import org.osgi.service.cm.ManagedService;
 import org.slf4j.Logger;
@@ -57,6 +36,9 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Thomas.Eichstaedt-Engelen
  * @author Kai Kreuzer
+ * @author Chris Jackson
+ * @author Gaël L'hopital
+ * @author Jan N. Klug
  * @since 1.0.0
  *
  */
@@ -114,11 +96,11 @@ public class PersistenceExtensions implements ManagedService {
 	 * @param the point in time for which the state should be retrieved 
 	 * @return the item state at the given point in time
 	 */
-	static public State historicState(Item item, AbstractInstant timestamp) {
+	static public HistoricItem historicState(Item item, AbstractInstant timestamp) {
 		if(isDefaultServiceAvailable()) {
 			return historicState(item, timestamp, defaultService);
 		} else {
-			return UnDefType.NULL;
+			return null;
 		}
 	}
 
@@ -131,7 +113,7 @@ public class PersistenceExtensions implements ManagedService {
 	 * @param serviceName the name of the {@link PersistenceService} to use
 	 * @return the item state at the given point in time
 	 */
-	static public State historicState(Item item, AbstractInstant timestamp, String serviceName) {
+	static public HistoricItem historicState(Item item, AbstractInstant timestamp, String serviceName) {
 		PersistenceService service = services.get(serviceName);
 		if (service instanceof QueryablePersistenceService) {
 			QueryablePersistenceService qService = (QueryablePersistenceService) service;
@@ -142,13 +124,13 @@ public class PersistenceExtensions implements ManagedService {
 			filter.setOrdering(Ordering.DESCENDING);
 			Iterable<HistoricItem> result = qService.query(filter);
 			if(result.iterator().hasNext()) {
-				return result.iterator().next().getState();
+				return result.iterator().next();
 			} else {
-				return UnDefType.NULL;
+				return null;
 			}
 		} else {
 			logger.warn("There is no queryable persistence service registered with the name '{}'", serviceName);
-			return UnDefType.UNDEF;
+			return null;
 		}
 	} 
 
@@ -180,7 +162,14 @@ public class PersistenceExtensions implements ManagedService {
 	static public Boolean changedSince(Item item, AbstractInstant timestamp, String serviceName) {
 		Iterable<HistoricItem> result = getAllStatesSince(item, timestamp, serviceName);
 		Iterator<HistoricItem> it = result.iterator();
-		State state = historicState(item, timestamp);
+		HistoricItem itemThen = historicState(item, timestamp);
+		if(itemThen == null) {
+			// Can't get the state at the start time
+			// If we've got results more recent that this, it must have changed
+			return(it.hasNext());
+		}
+
+		State state = itemThen.getState();
 		while(it.hasNext()) {
 			HistoricItem hItem = it.next();
 			if(state!=null && !hItem.getState().equals(state)) {
@@ -370,7 +359,7 @@ public class PersistenceExtensions implements ManagedService {
 			return null;
 		}
 	}
-
+	
 	/**
 	 * Gets the average value of the state of a given <code>item</code> since a certain point in time. 
 	 * The {@link PersistenceService} identified by the <code>serviceName</code> is used. 
@@ -383,27 +372,373 @@ public class PersistenceExtensions implements ManagedService {
 	static public DecimalType averageSince(Item item, AbstractInstant timestamp, String serviceName) {
 		Iterable<HistoricItem> result = getAllStatesSince(item, timestamp, serviceName);
 		Iterator<HistoricItem> it = result.iterator();
-		
-		DecimalType value = (DecimalType) item.getStateAs(DecimalType.class);
-		if (value == null) {
-			value = DecimalType.ZERO;
-		}
-		
-		double average = value.doubleValue();
-		int quantity = 1;
+
+		double total = 0;
+		int quantity = 0;
+		DecimalType histValue = null;
 		while(it.hasNext()) {
 			State state = it.next().getState();
 			if (state instanceof DecimalType) {
-				value = (DecimalType) state;
-				average += value.doubleValue();
+				histValue = (DecimalType) state;
+				total += histValue.doubleValue();
 				quantity++;
 			}
 		}
-		average /= quantity;
 		
-		return new DecimalType(average);
-	} 
+		// If the current value has not been persisted it should be included in the average as well.
+		// Assume that any current value different from the last historical value has not been 
+		// persisted and include it.
+		DecimalType currentValue = (DecimalType) item.getStateAs(DecimalType.class);
+		if (currentValue != null && currentValue != histValue ) {
+			total += currentValue.doubleValue();
+			quantity++;
+		}
+
+		if (quantity == 0 ){
+			return null;
+		}
+		else{
+			double average = total / quantity;
+			return new DecimalType(average);
+			
+		}
+	}
+
 	
+	/**
+	 * Gets the variance value of the state of a given <code>item</code> since a certain point in time. 
+	 * The default persistence service is used. 
+	 * 
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check 
+	 * @return the variance of the value since the given point in time
+	 */
+	static public DecimalType varianceSince(Item item, AbstractInstant timestamp) {
+		if(isDefaultServiceAvailable()) {
+			return varianceSince(item, timestamp, defaultService);
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Gets the variance value of the state of a given <code>item</code> since a certain point in time. 
+	 * The {@link PersistenceService} identified by the <code>serviceName</code> is used. 
+	 * 
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check 
+	 * @param serviceName the name of the {@link PersistenceService} to use
+	 * @return the variance of the value since the given point in time
+	 */
+	static public DecimalType varianceSince(Item item, AbstractInstant timestamp, String serviceName) {
+		Iterable<HistoricItem> result = getAllStatesSince(item, timestamp, serviceName);
+		Iterator<HistoricItem> it = result.iterator();
+
+		DecimalType average = averageSince(item, timestamp, serviceName);
+		if (average == null) {
+			return null;
+		}
+				
+		double total = 0;
+		int quantity = 0;
+		DecimalType histValue = null;
+		while(it.hasNext()) {
+			State state = it.next().getState();
+			if (state instanceof DecimalType) {
+				histValue = (DecimalType) state;
+				total += Math.pow(histValue.doubleValue()- average.doubleValue(), 2);
+				quantity++;
+			}
+		}
+
+		// If the current value has not been persisted it should be included in the average as well.
+		// Assume that any current value different from the last historical value has not been 
+		// persisted and include it.
+		DecimalType currentValue = (DecimalType) item.getStateAs(DecimalType.class);
+		if (currentValue != null && currentValue != histValue ) {
+			total += Math.pow(currentValue.doubleValue()- average.doubleValue(), 2);
+			quantity++;
+		}
+
+		if (quantity == 0 ){
+			return null;
+		}
+		else{
+			double variance = total / quantity;
+			return new DecimalType(variance);
+		}
+
+	}
+
+	/**
+	 * Gets the standard deviation value of the state of a given <code>item</code> since a certain point in time. 
+	 * The default persistence service is used. 
+	 * 
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check 
+	 * @return the standard deviation of the value since the given point in time
+	 */
+	static public DecimalType deviationSince(Item item, AbstractInstant timestamp) {
+		if(isDefaultServiceAvailable()) {
+			return deviationSince(item, timestamp, defaultService);
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Gets the standard deviation value of the state of a given <code>item</code> since a certain point in time. 
+	 * The {@link PersistenceService} identified by the <code>serviceName</code> is used. 
+	 * 
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check 
+	 * @param serviceName the name of the {@link PersistenceService} to use
+	 * @return the standard deviation of the value since the given point in time
+	 */
+	static public DecimalType deviationSince(Item item, AbstractInstant timestamp, String serviceName) {
+		DecimalType variance = varianceSince(item, timestamp, serviceName);
+		double deviation = Math.sqrt(variance.doubleValue());
+		
+ 		return new DecimalType(deviation);
+	}
+	
+	/**
+	 * Gets the sum of the state of a given <code>item</code> since a certain point in time. 
+	 * The default persistence service is used. 
+	 * 
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check 
+	 * @return the average state value since the given point in time
+	 */
+	static public DecimalType sumSince(Item item, AbstractInstant timestamp) {
+		if(isDefaultServiceAvailable()) {
+			return sumSince(item, timestamp, defaultService);
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Gets the sum of the state of a given <code>item</code> since a certain point in time. 
+	 * The {@link PersistenceService} identified by the <code>serviceName</code> is used. 
+	 * 
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check 
+	 * @param serviceName the name of the {@link PersistenceService} to use
+	 * @return the sum state value since the given point in time
+	 */
+
+	static public DecimalType sumSince(Item item, AbstractInstant timestamp, String serviceName) {
+		Iterable<HistoricItem> result = getAllStatesSince(item, timestamp, serviceName);
+		Iterator<HistoricItem> it = result.iterator();
+		
+		double sum = 0;
+		while(it.hasNext()) {
+			State state = it.next().getState();
+			if (state instanceof DecimalType) {
+				sum += ((DecimalType) state).doubleValue();
+			}
+		}
+
+		return new DecimalType(sum);
+	}
+	
+	/**
+	 * Query for the last update timestamp of a given <code>item</code>.
+	 * The default persistence service is used.
+	 *
+	 * @param item the item to check for state updates
+	 * @return point in time of the last update or null if none available
+	 */
+	static public Date lastUpdate(Item item) {
+		if(isDefaultServiceAvailable()) {
+			return lastUpdate(item, defaultService);
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * Query for the last update timestamp of a given <code>item</code>.
+	 *
+	 * @param item the item to check for state updates
+	 * @param serviceName the name of the {@link PersistenceService} to use
+	 * @return point in time of the last update or null if none available
+	 */
+	static public Date lastUpdate(Item item, String serviceName) {
+		PersistenceService service = services.get(serviceName);
+		if (service instanceof QueryablePersistenceService) {
+			QueryablePersistenceService qService = (QueryablePersistenceService) service;
+			FilterCriteria filter = new FilterCriteria();
+			filter.setItemName(item.getName());
+			filter.setOrdering(Ordering.DESCENDING);
+			filter.setPageSize(1);
+			Iterable<HistoricItem> result = qService.query(filter);
+			if (result.iterator().hasNext()) {
+				return result.iterator().next().getTimestamp();
+			} else {
+				return null;
+			}
+		} else {
+			logger.warn("There is no queryable persistence service registered with the name '{}'", serviceName);
+			return null;
+		}
+	}
+	
+	/**
+	 * Gets the difference value of the state of a given <code>item</code> since a certain point in time.
+	 * The default persistence service is used.
+	 *
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check
+	 * @return the difference between now and then, null if not calculable
+	 */
+	static public DecimalType deltaSince(Item item, AbstractInstant timestamp) {
+		if(isDefaultServiceAvailable()) {
+			return deltaSince(item, timestamp, defaultService);
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * Gets the difference value of the state of a given <code>item</code> since a certain point in time.
+	 * The {@link PersistenceService} identified by the <code>serviceName</code> is used.
+	 *
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check
+	 * @param serviceName the name of the {@link PersistenceService} to use
+	 * @return the difference between now and then, null if not calculable
+	 */
+	static public DecimalType deltaSince(Item item, AbstractInstant timestamp, String serviceName) {
+		DecimalType result = null;
+		HistoricItem itemThen = historicState(item, timestamp, serviceName);
+		if (itemThen != null) {
+			DecimalType valueThen = (DecimalType) itemThen.getState();
+			DecimalType valueNow = (DecimalType) item.getStateAs(DecimalType.class);
+		
+			if (( valueThen != null) && ( valueNow != null)) {
+				result = new DecimalType(valueNow.doubleValue() - valueThen.doubleValue());
+			};
+		}
+		return result;
+ 	}
+	
+	/**
+	 * Gets the evolution rate of the state of a given <code>item</code> since a certain point in time.
+	 * The {@link PersistenceService} identified by the <code>serviceName</code> is used.
+	 *
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check
+	 * @param serviceName the name of the {@link PersistenceService} to use
+	 * @return the evolution rate in percent (positive and negative) between now and then, 
+	 * 			null if not calculable
+	 */
+	static public DecimalType evolutionRate(Item item, AbstractInstant timestamp) {
+		if(isDefaultServiceAvailable()) {
+			return evolutionRate(item, timestamp, defaultService);
+		} else {
+			return null;
+		}
+	}
+	
+	/**
+	 * Gets the evolution rate of the state of a given <code>item</code> since a certain point in time.
+	 * The {@link PersistenceService} identified by the <code>serviceName</code> is used.
+	 *
+	 * @param item the item to get the average state value for
+	 * @param the point in time to start the check
+	 * @param serviceName the name of the {@link PersistenceService} to use
+	 * @return the evolution rate in percent (positive and negative) between now and then, 
+	 * 			null if not calculable
+	 */
+	static public DecimalType evolutionRate(Item item, AbstractInstant timestamp, String serviceName) {
+		DecimalType result = null;
+		HistoricItem itemThen = historicState(item, timestamp, serviceName);
+		if (itemThen != null) {
+			DecimalType valueThen = (DecimalType) itemThen.getState();
+			DecimalType valueNow = (DecimalType) item.getStateAs(DecimalType.class);
+		
+			if (( valueThen != null) && ( valueNow != null)) {
+				result = new DecimalType(100 * (valueNow.doubleValue() - valueThen.doubleValue()) / valueThen.doubleValue());
+			};
+		}
+		return result;
+ 	}
+	
+	/**
+	 * Returns the previous state of a given <code>item</code>. 
+	 * 
+	 * @param item the item to get the previous state value for
+	 * @return the previous state
+	 */
+	static public HistoricItem previousState(Item item) {
+		return previousState(item, false);
+	}
+
+	/**
+	 * Returns the previous state of a given <code>item</code>. 
+	 * 
+	 * @param item the item to get the previous state value for
+	 * @param skipEqual if true, skips equal state values and searches the first state not equal the current state
+	 * @return the previous state
+	 */
+	static public HistoricItem previousState(Item item, boolean skipEqual) {
+		if (isDefaultServiceAvailable()) {
+			return previousState(item, skipEqual, defaultService);
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Returns the previous state of a given <code>item</code>. 
+	 * The {@link PersistenceService} identified by the <code>serviceName</code> is used. 
+	 * 
+	 * @param item the item to get the previous state value for
+	 * @param skipEqual if true, skips equal state values and searches the first state not equal the current state
+	 * @param serviceName the name of the {@link PersistenceService} to use
+	 * @return the previous state
+	 */
+	static public HistoricItem previousState(Item item, boolean skipEqual, String serviceName) {
+		PersistenceService service = services.get(serviceName);
+		if (service instanceof QueryablePersistenceService) {
+			QueryablePersistenceService qService = (QueryablePersistenceService) service;
+			FilterCriteria filter = new FilterCriteria();
+			filter.setItemName(item.getName());
+			filter.setOrdering(Ordering.DESCENDING);
+
+			filter.setPageSize(skipEqual ? 1000 : 1);
+			int startPage = 0;
+			filter.setPageNumber(startPage);
+
+			Iterable<HistoricItem> items = qService.query(filter);
+			while (items != null) {
+				Iterator<HistoricItem> itemIterator = items.iterator();
+				int itemCount = 0;
+				while (itemIterator.hasNext()) {
+					HistoricItem historicItem = itemIterator.next(); 
+					itemCount++;
+					if (!skipEqual || (skipEqual && !historicItem.getState().equals(item.getState()))) {
+						return historicItem;
+					}
+				}
+				if (itemCount == filter.getPageSize()) {
+					filter.setPageNumber(++startPage);
+					items = qService.query(filter);
+				}
+				else {
+					items = null;
+				}
+			}
+			return null;
+
+		} else {
+			logger.warn("There is no queryable persistence service registered with the name '{}'", serviceName);
+			return null;
+		}
+	}
+
 	static private Iterable<HistoricItem> getAllStatesSince(Item item, AbstractInstant timestamp, String serviceName) {
 		PersistenceService service = services.get(serviceName);
 		if (service instanceof QueryablePersistenceService) {

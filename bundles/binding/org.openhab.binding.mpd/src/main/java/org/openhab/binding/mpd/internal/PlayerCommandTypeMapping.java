@@ -1,30 +1,10 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.binding.mpd.internal;
 
@@ -33,99 +13,129 @@ import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.types.Type;
 import org.openhab.core.types.UnDefType;
 
-
 /**
  * Represents all valid commands which could be processed by this binding
- * 
+ *
  * @author Thomas.Eichstaedt-Engelen
  */
 public enum PlayerCommandTypeMapping {
 
-	PAUSE {
-		{
-			command = "pause";
-			type = OnOffType.OFF;
-		}
-	},
-	
-	PLAY {
-		{
-			command = "play";
-			type = OnOffType.ON;
-		}
-	},
+    PAUSE {
+        {
+            command = "pause";
+            type = OnOffType.OFF;
+        }
+    },
 
-	STOP {
-		{
-			command = "stop";
-			type = OnOffType.OFF;
-		}
-	},
+    PLAYSONG {
+        {
+            command = "playsong";
+            type = OnOffType.ON;
+        }
+    },
 
-	VOLUME {
-		{
-			command = "volume";
-		}
-	},
+    PLAY {
+        {
+            command = "play";
+            type = OnOffType.ON;
+        }
+    },
 
-	VOLUME_INCREASE {
-		{
-			command = "volume_increase";
-			type = IncreaseDecreaseType.INCREASE;
-		}
-	},
+    STOP {
+        {
+            command = "stop";
+            type = OnOffType.OFF;
+        }
+    },
 
-	VOLUME_DECREASE {
-		{
-			command = "volume_decrease";
-			type = IncreaseDecreaseType.DECREASE;
-		}
-	},
-	
-	NEXT {
-		{
-			command = "next";
-			type = OnOffType.ON;
-		}
-	},
-	
-	PREV {
-		{
-			command = "prev";
-			type = OnOffType.OFF;
-		}
-	};
+    VOLUME {
+        {
+            command = "volume";
+        }
+    },
 
-	/** Represents the player command as it will be used in *.items configuration */
-	String command;
-	
-	/** The corresponding openHAB-{@link Type} or {@link UnDefType}<code>.NULL</code> by default */
-	Type type = UnDefType.NULL;
+    TRACKINFO {
+        {
+            command = "tracktitle";
+        }
+    },
 
-	public String getPlayerCommand() {
-		return command;
-	}
+    TRACKARTIST {
+        {
+            command = "trackartist";
+        }
+    },
 
-	public Type getType() {
-		return type;
-	}
+    VOLUME_INCREASE {
+        {
+            command = "volume_increase";
+            type = IncreaseDecreaseType.INCREASE;
+        }
+    },
 
-	public static PlayerCommandTypeMapping fromString(String playerCommand) {
+    VOLUME_DECREASE {
+        {
+            command = "volume_decrease";
+            type = IncreaseDecreaseType.DECREASE;
+        }
+    },
 
-		if ("".equals(playerCommand)) {
-			return null;
-		}
+    NEXT {
+        {
+            command = "next";
+            type = OnOffType.ON;
+        }
+    },
 
-		for (PlayerCommandTypeMapping c : PlayerCommandTypeMapping.values()) {
+    PREV {
+        {
+            command = "prev";
+            type = OnOffType.OFF;
+        }
+    },
 
-			if (c.getPlayerCommand().equals(playerCommand)) {
-				return c;
-			}
-		}
+    ENABLE {
+        {
+            command = "enable";
+            type = OnOffType.ON;
+        }
+    },
 
-		throw new IllegalArgumentException("cannot find playerCommand for '"
-				+ playerCommand + "'");
-	}
-	
-	
+    DISABLE {
+        {
+            command = "disable";
+            type = OnOffType.OFF;
+        }
+    };
+
+    /** Represents the player command as it will be used in *.items configuration */
+    String command;
+
+    /** The corresponding openHAB-{@link Type} or {@link UnDefType}<code>.NULL</code> by default */
+    Type type = UnDefType.NULL;
+
+    public String getPlayerCommand() {
+        return command;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public static PlayerCommandTypeMapping fromString(String playerCommand) {
+
+        if ("".equals(playerCommand)) {
+            return null;
+        }
+
+        for (PlayerCommandTypeMapping c : PlayerCommandTypeMapping.values()) {
+
+            if (c.getPlayerCommand().equals(playerCommand)) {
+                return c;
+            }
+        }
+
+        throw new IllegalArgumentException("cannot find playerCommand for '" + playerCommand + "'");
+    }
+
 }

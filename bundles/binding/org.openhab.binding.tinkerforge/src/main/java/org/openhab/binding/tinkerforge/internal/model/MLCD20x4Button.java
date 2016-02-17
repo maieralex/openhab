@@ -1,122 +1,83 @@
 /**
- * 
- *  Tinkerforge Binding Copyright (C) 2013 Theo Weiss <theo.weiss@gmail.com> contributed to: openHAB, the open Home Automation Bus.
- *  Copyright (C)  2013, openHAB.org <admin@openhab.org>
- * 
- *  See the contributors.txt file in the distribution for a
- *  full listing of individual contributors.
- * 
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as
- *  published by the Free Software Foundation; either version 3 of the
- *  License, or (at your option) any later version.
- * 
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- * 
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, see <http://www.gnu.org/licenses>.
- * 
- *  Additional permission under GNU GPL version 3 section 7
- * 
- *  If you modify this Program, or any covered work, by linking or
- *  combining it with Eclipse (or a modified version of that library),
- *  containing parts covered by the terms of the Eclipse Public License
- *  (EPL), the licensors of this Program grant you additional permission
- *  to convey the resulting work.
- * 
+ * Copyright (c) 2010-2016, openHAB.org and others.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.binding.tinkerforge.internal.model;
 
+import org.openhab.binding.tinkerforge.internal.types.OnOffValue;
 
 /**
  * <!-- begin-user-doc -->
  * A representation of the model object '<em><b>MLCD2 0x4 Button</b></em>'.
- * <!-- end-user-doc -->
  *
- * <p>
- * The following features are supported:
- * <ul>
- *   <li>{@link org.openhab.binding.tinkerforge.internal.model.MLCD20x4Button#getDeviceType <em>Device Type</em>}</li>
- *   <li>{@link org.openhab.binding.tinkerforge.internal.model.MLCD20x4Button#getButtonNum <em>Button Num</em>}</li>
- *   <li>{@link org.openhab.binding.tinkerforge.internal.model.MLCD20x4Button#getCallbackPeriod <em>Callback Period</em>}</li>
- * </ul>
- * </p>
+ * @author Theo Weiss
+ * @since 1.3.0
+ *        <!-- end-user-doc -->
+ *
+ *        <p>
+ *        The following features are supported:
+ *        <ul>
+ *        <li>{@link org.openhab.binding.tinkerforge.internal.model.MLCD20x4Button#getDeviceType <em>Device Type</em>}
+ *        </li>
+ *        <li>{@link org.openhab.binding.tinkerforge.internal.model.MLCD20x4Button#getButtonNum <em>Button Num</em>}
+ *        </li>
+ *        </ul>
+ *        </p>
  *
  * @see org.openhab.binding.tinkerforge.internal.model.ModelPackage#getMLCD20x4Button()
- * @model
+ * @model superTypes=
+ *        "org.openhab.binding.tinkerforge.internal.model.MSensor<org.openhab.binding.tinkerforge.internal.model.SwitchState> org.openhab.binding.tinkerforge.internal.model.MLCDSubDevice org.openhab.binding.tinkerforge.internal.model.MTFConfigConsumer<org.openhab.binding.tinkerforge.internal.model.ButtonConfiguration>"
  * @generated
  */
-public interface MLCD20x4Button extends MOutSwitchActor, MSubDevice<MBrickletLCD20x4>
-{
-  /**
-   * Returns the value of the '<em><b>Device Type</b></em>' attribute.
-   * The default value is <code>"lcd_button"</code>.
-   * <!-- begin-user-doc -->
-   * <p>
-   * If the meaning of the '<em>Device Type</em>' attribute isn't clear,
-   * there really should be more of a description here...
-   * </p>
-   * <!-- end-user-doc -->
-   * @return the value of the '<em>Device Type</em>' attribute.
-   * @see org.openhab.binding.tinkerforge.internal.model.ModelPackage#getMLCD20x4Button_DeviceType()
-   * @model default="lcd_button" unique="false" changeable="false"
-   * @generated
-   */
-  String getDeviceType();
+public interface MLCD20x4Button extends MSensor<OnOffValue>, MLCDSubDevice, MTFConfigConsumer<ButtonConfiguration> {
+    /**
+     * Returns the value of the '<em><b>Device Type</b></em>' attribute.
+     * The default value is <code>"lcd_button"</code>.
+     * <!-- begin-user-doc -->
+     * <p>
+     * If the meaning of the '<em>Device Type</em>' attribute isn't clear,
+     * there really should be more of a description here...
+     * </p>
+     * <!-- end-user-doc -->
+     * 
+     * @return the value of the '<em>Device Type</em>' attribute.
+     * @see org.openhab.binding.tinkerforge.internal.model.ModelPackage#getMLCD20x4Button_DeviceType()
+     * @model default="lcd_button" unique="false" changeable="false"
+     * @generated
+     */
+    String getDeviceType();
 
-  /**
-   * Returns the value of the '<em><b>Button Num</b></em>' attribute.
-   * <!-- begin-user-doc -->
-   * <p>
-   * If the meaning of the '<em>Button Num</em>' attribute isn't clear,
-   * there really should be more of a description here...
-   * </p>
-   * <!-- end-user-doc -->
-   * @return the value of the '<em>Button Num</em>' attribute.
-   * @see #setButtonNum(short)
-   * @see org.openhab.binding.tinkerforge.internal.model.ModelPackage#getMLCD20x4Button_ButtonNum()
-   * @model unique="false"
-   * @generated
-   */
-  short getButtonNum();
+    /**
+     * Returns the value of the '<em><b>Button Num</b></em>' attribute.
+     * <!-- begin-user-doc -->
+     * <p>
+     * If the meaning of the '<em>Button Num</em>' attribute isn't clear,
+     * there really should be more of a description here...
+     * </p>
+     * <!-- end-user-doc -->
+     * 
+     * @return the value of the '<em>Button Num</em>' attribute.
+     * @see #setButtonNum(short)
+     * @see org.openhab.binding.tinkerforge.internal.model.ModelPackage#getMLCD20x4Button_ButtonNum()
+     * @model unique="false"
+     * @generated
+     */
+    short getButtonNum();
 
-  /**
-   * Sets the value of the '{@link org.openhab.binding.tinkerforge.internal.model.MLCD20x4Button#getButtonNum <em>Button Num</em>}' attribute.
-   * <!-- begin-user-doc -->
-   * <!-- end-user-doc -->
-   * @param value the new value of the '<em>Button Num</em>' attribute.
-   * @see #getButtonNum()
-   * @generated
-   */
-  void setButtonNum(short value);
-
-  /**
-   * Returns the value of the '<em><b>Callback Period</b></em>' attribute.
-   * <!-- begin-user-doc -->
-   * <p>
-   * If the meaning of the '<em>Callback Period</em>' attribute isn't clear,
-   * there really should be more of a description here...
-   * </p>
-   * <!-- end-user-doc -->
-   * @return the value of the '<em>Callback Period</em>' attribute.
-   * @see #setCallbackPeriod(int)
-   * @see org.openhab.binding.tinkerforge.internal.model.ModelPackage#getMLCD20x4Button_CallbackPeriod()
-   * @model unique="false"
-   * @generated
-   */
-  int getCallbackPeriod();
-
-  /**
-   * Sets the value of the '{@link org.openhab.binding.tinkerforge.internal.model.MLCD20x4Button#getCallbackPeriod <em>Callback Period</em>}' attribute.
-   * <!-- begin-user-doc -->
-   * <!-- end-user-doc -->
-   * @param value the new value of the '<em>Callback Period</em>' attribute.
-   * @see #getCallbackPeriod()
-   * @generated
-   */
-  void setCallbackPeriod(int value);
+    /**
+     * Sets the value of the '{@link org.openhab.binding.tinkerforge.internal.model.MLCD20x4Button#getButtonNum
+     * <em>Button Num</em>}' attribute.
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * 
+     * @param value the new value of the '<em>Button Num</em>' attribute.
+     * @see #getButtonNum()
+     * @generated
+     */
+    void setButtonNum(short value);
 
 } // MLCD20x4Button

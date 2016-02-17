@@ -1,49 +1,28 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.binding.onkyo.internal.eiscp;
 
-
 /**
  * Maps a Readable string to a corresponding {@link EiscpCommandRef}.
- * 
+ *
  * @author Thomas.Eichstaedt-Engelen
- * @author Pauli Anttila 
+ * @author Pauli Anttila
  * @since 1.3.0
  */
 public enum EiscpCommand {
-	
+
     // Main zone
-    
+
     POWER_OFF("PWR00", EiscpCommandRef.POWER_OFF),
     POWER_ON("PWR01", EiscpCommandRef.POWER_ON),
     POWER_QUERY("PWRQSTN", EiscpCommandRef.POWER_QUERY),
-    
+
     UNMUTE("AMT00", EiscpCommandRef.UNMUTE),
     MUTE("AMT01", EiscpCommandRef.MUTE),
     MUTE_QUERY("AMTQSTN", EiscpCommandRef.MUTE_QUERY),
@@ -60,6 +39,7 @@ public enum EiscpCommand {
     SOURCE_SATELLITE("SLI01", EiscpCommandRef.SOURCE_SATELLITE),
     SOURCE_CABLE("SLI01", EiscpCommandRef.SOURCE_SATELLITE),
     SOURCE_GAME("SLI02", EiscpCommandRef.SOURCE_GAME),
+    SOURCE_GAME2("SLI04", EiscpCommandRef.SOURCE_GAME2),
     SOURCE_AUXILIARY("SLI03", EiscpCommandRef.SOURCE_AUX),
     SOURCE_AUX("SLI03", EiscpCommandRef.SOURCE_AUX),
     SOURCE_VIDEO5("SLI04", EiscpCommandRef.SOURCE_VIDEO5),
@@ -97,7 +77,7 @@ public enum EiscpCommand {
     VIDEO_WIDE_SMARTZOOM("VWM05", EiscpCommandRef.VIDEO_WIDE_SMARTZOOM),
     VIDEO_WIDE_NEXT("VWMUP", EiscpCommandRef.VIDEO_WIDE_NEXT),
     VIDEO_WIDE_QUERY("VWMQSTN", EiscpCommandRef.VIDEO_WIDE_QUERY),
-    
+
     LISTEN_MODE_STEREO("LMD00", EiscpCommandRef.LISTEN_MODE_STEREO),
     LISTEN_MODE_ALCHANSTEREO("LMD0C", EiscpCommandRef.LISTEN_MODE_ALCHANSTEREO),
     LISTEN_MODE_AUDYSSEY_DSX("LMD16", EiscpCommandRef.LISTEN_MODE_AUDYSSEY_DSX),
@@ -145,22 +125,22 @@ public enum EiscpCommand {
     NETUSB_OP_CHANDWN("NTCCHDN", EiscpCommandRef.NETUSB_OP_CHANDWN),
     NETUSB_OP_MENU("NTCMENU", EiscpCommandRef.NETUSB_OP_MENU),
     NETUSB_OP_TOPMENU("NTCTOP", EiscpCommandRef.NETUSB_OP_TOPMENU),
-    
+
     NETUSB_SONG_ARTIST_QUERY("NATQSTN", EiscpCommandRef.NETUSB_SONG_ARTIST_QUERY),
     NETUSB_SONG_ALBUM_QUERY("NALQSTN", EiscpCommandRef.NETUSB_SONG_ALBUM_QUERY),
     NETUSB_SONG_TITLE_QUERY("NTIQSTN", EiscpCommandRef.NETUSB_SONG_TITLE_QUERY),
     NETUSB_SONG_ELAPSEDTIME_QUERY("NTMQSTN", EiscpCommandRef.NETUSB_SONG_ELAPSEDTIME_QUERY),
     NETUSB_SONG_TRACK_QUERY("NTRQSTN", EiscpCommandRef.NETUSB_SONG_TRACK_QUERY),
-    NETUSB_PLAY_STATUS_QUERY("NSTQSTN", EiscpCommandRef.NETUSB_PLAY_STATUS_QUERY),	
+    NETUSB_PLAY_STATUS_QUERY("NSTQSTN", EiscpCommandRef.NETUSB_PLAY_STATUS_QUERY),
 
     /*
-     *      Zone 2
+     * Zone 2
      */
-    
+
     ZONE2_POWER_OFF("ZPW00", EiscpCommandRef.ZONE2_POWER_SBY),
     ZONE2_POWER_ON("ZPW01", EiscpCommandRef.ZONE2_POWER_ON),
     ZONE2_POWER_QUERY("ZPWQSTN", EiscpCommandRef.POWER_QUERY),
-    
+
     ZONE2_UNMUTE("ZMT00", EiscpCommandRef.ZONE2_UNMUTE),
     ZONE2_MUTE("ZMT01", EiscpCommandRef.ZONE2_MUTE),
     ZONE2_MUTE_QUERY("ZMTQSTN", EiscpCommandRef.ZONE2_MUTE_QUERY),
@@ -207,14 +187,13 @@ public enum EiscpCommand {
     ZONE2_SOURCE("SLZ%02X", EiscpCommandRef.ZONE2_SOURCE_SET),
 
     /*
-     *      Zone 3
+     * Zone 3
      */
 
-    
     ZONE3_POWER_OFF("PW300", EiscpCommandRef.ZONE3_POWER_SBY),
     ZONE3_POWER_ON("PW301", EiscpCommandRef.ZONE3_POWER_ON),
     ZONE3_POWER_QUERY("PW3QSTN", EiscpCommandRef.POWER_QUERY),
-    
+
     ZONE3_UNMUTE("MT300", EiscpCommandRef.ZONE3_UNMUTE),
     ZONE3_MUTE("MT301", EiscpCommandRef.ZONE3_MUTE),
     ZONE3_MUTE_QUERY("MT3QSTN", EiscpCommandRef.ZONE3_MUTE_QUERY),
@@ -258,57 +237,54 @@ public enum EiscpCommand {
     ZONE3_SOURCE_QUERY("SL3QSTN", EiscpCommandRef.ZONE3_SOURCE_QUERY),
     ZONE3_SOURCE_SET("SL3%02X", EiscpCommandRef.ZONE3_SOURCE_SET),
     ZONE3_SET_SOURCE("SL3%02X", EiscpCommandRef.ZONE3_SOURCE_SET),
-    ZONE3_SOURCE("SL3%02X", EiscpCommandRef.ZONE3_SOURCE_SET),
-    ;
-    
+    ZONE3_SOURCE("SL3%02X", EiscpCommandRef.ZONE3_SOURCE_SET),;
+
     private String command;
-	private EiscpCommandRef commandRef;
-	
-	
-	private EiscpCommand(String command, EiscpCommandRef commandRef) {
-		this.command = command;
-		this.commandRef = commandRef;
-	}
-	
-	
-	/**
-	 * @return the iscp command string (example 'SLI10')
-	 */
-	public String getCommand() {
-		return command;
-	}
+    private EiscpCommandRef commandRef;
 
-	/**
-	 * @return the iscp command constant reference
-	 */
-	public EiscpCommandRef getCommandRef() {
-		return commandRef;
-	}
-	
-	/**
-	 * @param command the command to find a matching command name for.
-	 * @return the commandName that is associated with the passed command.
-	 */
-	public static EiscpCommand getCommandByCommandStr(String command) {
-		for (EiscpCommand candidate : values()) {
-			if (candidate.getCommand().equals(command)) {
-				return candidate;
-			}
-		}
-		throw new IllegalStateException("There is no matching commandName for command '" + command + "'");
-	}
+    private EiscpCommand(String command, EiscpCommandRef commandRef) {
+        this.command = command;
+        this.commandRef = commandRef;
+    }
 
-	/**
-	 * @param commandRef the eISCP Command to find a matching command name.
-	 * @return the commandName that is associated with the passed eISCP command.
-	 */
-	public static EiscpCommand getCommandByCommandRef(int commandRef) {
-		for (EiscpCommand candidate : values()) {
-			if (candidate.getCommandRef().getCommand() == commandRef) {
-				return candidate;
-			}
-		}
-		throw new IllegalStateException("There is no matching commandName for commandRef '" + commandRef + "'");
-	}
-	
+    /**
+     * @return the iscp command string (example 'SLI10')
+     */
+    public String getCommand() {
+        return command;
+    }
+
+    /**
+     * @return the iscp command constant reference
+     */
+    public EiscpCommandRef getCommandRef() {
+        return commandRef;
+    }
+
+    /**
+     * @param command the command to find a matching command name for.
+     * @return the commandName that is associated with the passed command.
+     */
+    public static EiscpCommand getCommandByCommandStr(String command) {
+        for (EiscpCommand candidate : values()) {
+            if (candidate.getCommand().equals(command)) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("There is no matching commandName for command '" + command + "'");
+    }
+
+    /**
+     * @param commandRef the eISCP Command to find a matching command name.
+     * @return the commandName that is associated with the passed eISCP command.
+     */
+    public static EiscpCommand getCommandByCommandRef(int commandRef) {
+        for (EiscpCommand candidate : values()) {
+            if (candidate.getCommandRef().getCommand() == commandRef) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("There is no matching commandName for commandRef '" + commandRef + "'");
+    }
+
 }

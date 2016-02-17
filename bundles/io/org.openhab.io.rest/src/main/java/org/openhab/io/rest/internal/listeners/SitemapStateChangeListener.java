@@ -1,30 +1,10 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.io.rest.internal.listeners;
 
@@ -37,8 +17,10 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.UriBuilder;
 
+import org.atmosphere.cpr.BroadcasterConfig;
 import org.openhab.core.items.Item;
-import org.openhab.io.rest.internal.RESTApplication;
+import org.openhab.io.rest.RESTApplication;
+import org.openhab.io.rest.internal.cache.SingleMessageBroadcastCache;
 import org.openhab.io.rest.internal.resources.ResponseTypeHelper;
 import org.openhab.io.rest.internal.resources.SitemapResource;
 import org.openhab.io.rest.internal.resources.beans.PageBean;
@@ -57,12 +39,20 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Kai Kreuzer
  * @author Oliver Mazur
+ * @author Dan Cunningham
  * @since 0.9.0
  *
  */
 public class SitemapStateChangeListener extends ResourceStateChangeListener {
 
-	private static final Logger logger = LoggerFactory.getLogger(ResourceStateChangeListener.class);
+	private static final Logger logger = LoggerFactory.getLogger(SitemapStateChangeListener.class);
+	
+	@Override
+	public void configureCache(BroadcasterConfig config){
+		config.setBroadcasterCache(new SingleMessageBroadcastCache());
+		config.getBroadcasterCache().configure(broadcaster.getBroadcasterConfig());
+		config.getBroadcasterCache().start();
+	}
 	
 	@Override
 	protected Object getResponseObject(HttpServletRequest request) {
@@ -123,6 +113,10 @@ public class SitemapStateChangeListener extends ResourceStateChangeListener {
 		for(Widget child : children) {
 			if (child instanceof Frame) {
 				Frame frame = (Frame) child;
+				String itemName = frame.getItem();
+				if(itemName!=null) {
+					itemNames.add(itemName);
+				}
 				itemNames.addAll(getRelevantItemNamesForWidgets(frame.getChildren()));
 			} else {
 				String itemName = child.getItem();
@@ -135,22 +129,26 @@ public class SitemapStateChangeListener extends ResourceStateChangeListener {
 	}
 	
 	private PageBean getPageBean(HttpServletRequest request){
-		String pathInfo = request.getPathInfo();
-		
-		String responseType = (new ResponseTypeHelper()).getResponseType(request);
-		if(responseType!=null) {
-			URI basePath = UriBuilder.fromUri(request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+(request.getContextPath().equals("null")?"":request.getContextPath()) + RESTApplication.REST_SERVLET_ALIAS +"/").build();
-			if (pathInfo.startsWith("/" + SitemapResource.PATH_SITEMAPS)) {
-	        	String[] pathSegments = pathInfo.substring(1).split("/");
-	            if(pathSegments.length>=3) {
-	            	String sitemapName = pathSegments[1];
-	            	String pageId = pathSegments[2];
-	            	Sitemap sitemap = (Sitemap) RESTApplication.getModelRepository().getModel(sitemapName + ".sitemap");
-	            	if(sitemap!=null) {
-						return SitemapResource.getPageBean(sitemapName, pageId, basePath);
-	            	}
-	            }
-	        }
+		try {
+			String pathInfo = request.getPathInfo();
+			
+			String responseType = (new ResponseTypeHelper()).getResponseType(request);
+			if(responseType!=null) {
+				URI basePath = UriBuilder.fromUri(request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+(request.getContextPath().equals("null")?"":request.getContextPath()) + RESTApplication.REST_SERVLET_ALIAS +"/").build();
+				if (pathInfo.startsWith("/" + SitemapResource.PATH_SITEMAPS)) {
+		        	String[] pathSegments = pathInfo.substring(1).split("/");
+		            if(pathSegments.length>=3) {
+		            	String sitemapName = pathSegments[1];
+		            	String pageId = pathSegments[2];
+		            	Sitemap sitemap = (Sitemap) RESTApplication.getModelRepository().getModel(sitemapName + ".sitemap");
+		            	if(sitemap!=null) {
+							return SitemapResource.getPageBean(sitemapName, pageId, basePath);
+		            	}
+		            }
+		        }
+			}
+		} catch (Exception e) {
+			return null;
 		}
 		return null;
 		

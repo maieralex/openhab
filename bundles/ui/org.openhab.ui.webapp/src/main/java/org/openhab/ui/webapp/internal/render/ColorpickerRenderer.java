@@ -1,30 +1,10 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.ui.webapp.internal.render;
 
@@ -36,6 +16,7 @@ import org.openhab.core.library.types.HSBType;
 import org.openhab.core.types.State;
 import org.openhab.model.sitemap.Colorpicker;
 import org.openhab.model.sitemap.Widget;
+import org.openhab.ui.webapp.internal.servlet.BaseServlet;
 import org.openhab.ui.webapp.internal.servlet.WebAppServlet;
 import org.openhab.ui.webapp.render.RenderException;
 import org.openhab.ui.webapp.render.WidgetRenderer;
@@ -83,6 +64,7 @@ public class ColorpickerRenderer extends AbstractWidgetRenderer {
 		}
 		String label = getLabel(cp);
 		String purelabel = label;
+		purelabel = purelabel.replaceAll("\\\"", "\\\\'");
 		if(label.contains("<span>")) {
 			purelabel = purelabel.substring(0, label.indexOf("<span>"));
 		}
@@ -94,7 +76,21 @@ public class ColorpickerRenderer extends AbstractWidgetRenderer {
 		snippet = StringUtils.replace(snippet, "%purelabel%", purelabel);
 		snippet = StringUtils.replace(snippet, "%state%", hexValue);
 		snippet = StringUtils.replace(snippet, "%frequency%", frequency);
-		snippet = StringUtils.replace(snippet, "%servletname%", WebAppServlet.SERVLET_NAME);
+		snippet = StringUtils.replace(snippet, "%servletname%", WebAppServlet.SERVLET_PATH);
+
+		String style = "";
+		String color = itemUIRegistry.getLabelColor(w);
+		if(color != null) {
+			style = "color:"+ color;
+		}
+		snippet = StringUtils.replace(snippet, "%labelstyle%", style);
+
+		style = "";
+		color = itemUIRegistry.getValueColor(w);
+		if(color != null) {
+			style = "color:"+ color;
+		}
+		snippet = StringUtils.replace(snippet, "%valuestyle%", style);
 
 		sb.append(snippet);
 		return null;

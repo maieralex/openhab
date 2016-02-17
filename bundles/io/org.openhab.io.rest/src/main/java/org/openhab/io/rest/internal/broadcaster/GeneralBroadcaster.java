@@ -1,37 +1,20 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.io.rest.internal.broadcaster;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.WeakHashMap;
 
+import org.atmosphere.cpr.AtmosphereConfig;
+import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterLifeCyclePolicyListener;
 import org.atmosphere.jersey.JerseyBroadcaster;
 import org.openhab.io.rest.internal.listeners.ResourceStateChangeListener;
@@ -47,8 +30,10 @@ public class GeneralBroadcaster extends JerseyBroadcaster {
 	private static final Logger logger = LoggerFactory.getLogger(GeneralBroadcaster.class);
 	protected Collection<ResourceStateChangeListener> listeners = Collections.newSetFromMap(new WeakHashMap<ResourceStateChangeListener, Boolean>());
 	
-	public GeneralBroadcaster(String id, org.atmosphere.cpr.AtmosphereConfig config) {
-		super(id, config);
+	@Override
+	public Broadcaster initialize(String name, URI uri, AtmosphereConfig config) {
+		super.initialize(name, uri, config);
+		
 		this.addBroadcasterLifeCyclePolicyListener(new BroadcasterLifeCyclePolicyListener() {
 			
 			@Override
@@ -59,23 +44,21 @@ public class GeneralBroadcaster extends JerseyBroadcaster {
 			@Override
 			public void onEmpty() {
 				logger.debug("broadcaster '{}' is empty", this.toString());
-			/*	for (ResourceStateChangeListener l : listeners){
-					l.unregisterItems();
-					listeners.remove(l);
-
-				} */
-				
 			}
 			
 			@Override
 			public void onDestroy() {
 				logger.debug("broadcaster '{}' destroyed", this.toString());
-				for (ResourceStateChangeListener l : listeners){
-					l.unregisterItems();
-					listeners.remove(l);
+				logger.trace("broadcaster '{}' left {} {} instaces", this.toString(), listeners.size(), ResourceStateChangeListener.class.getName());
+				for (ResourceStateChangeListener listener : listeners){
+					listener.unregisterItems();
+					boolean removed = listeners.remove(listener);
+					if (!removed) logger.warn("Could not remove event listener '{}', this may cause a memory leak.", listener.toString());
 				}
 			}
 		});
+		
+		return this;
 	}
 	
 	public void addStateChangeListener(final ResourceStateChangeListener listener){

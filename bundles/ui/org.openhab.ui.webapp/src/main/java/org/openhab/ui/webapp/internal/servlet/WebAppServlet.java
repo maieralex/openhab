@@ -1,30 +1,10 @@
 /**
- * openHAB, the open Home Automation Bus.
- * Copyright (C) 2010-2013, openHAB.org <admin@openhab.org>
+ * Copyright (c) 2010-2016, openHAB.org and others.
  *
- * See the contributors.txt file in the distribution for a
- * full listing of individual contributors.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- *
- * Additional permission under GNU GPL version 3 section 7
- *
- * If you modify this Program, or any covered work, by linking or
- * combining it with Eclipse (or a modified version of that library),
- * containing parts covered by the terms of the Eclipse Public License
- * (EPL), the licensors of this Program grant you additional permission
- * to convey the resulting work.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.openhab.ui.webapp.internal.servlet;
 
@@ -69,10 +49,12 @@ public class WebAppServlet extends BaseServlet {
 	/** timeout for polling requests in milliseconds; if no state changes during this time, 
 	 *  an empty response is returned.
 	 */
-	private static final long TIMEOUT_IN_MS = 30000L;
+	private static final long TIMEOUT_IN_MS = 10000L;
 
 	/** the name of the servlet to be used in the URL */
-	public static final String SERVLET_NAME = "openhab.app";
+	public static final String SERVLET_NAME = "/openhab.app";
+	
+	public static final String SERVLET_PATH = WEBAPP_ALIAS + SERVLET_NAME;
 		
 	private PageRenderer renderer;
 	protected SitemapProvider sitemapProvider;
@@ -90,13 +72,12 @@ public class WebAppServlet extends BaseServlet {
 		this.renderer = renderer;
 	}
 	
-	
 	protected void activate() {
 		try {			
 			Hashtable<String, String> props = new Hashtable<String, String>();
-			httpService.registerServlet(WEBAPP_ALIAS + SERVLET_NAME, this, props, createHttpContext());
+			httpService.registerServlet(SERVLET_NAME, this, props, createHttpContext());
 			httpService.registerResources(WEBAPP_ALIAS, "web", null);
-			logger.info("Started Classic UI at " + WEBAPP_ALIAS + SERVLET_NAME);
+			logger.info("Started Classic UI at " + SERVLET_PATH);
 		} catch (NamespaceException e) {
 			logger.error("Error during servlet startup", e);
 		} catch (ServletException e) {
@@ -105,7 +86,7 @@ public class WebAppServlet extends BaseServlet {
 	}
 	
 	protected void deactivate() {
-		httpService.unregister(WEBAPP_ALIAS + SERVLET_NAME);
+		httpService.unregister(SERVLET_PATH);
 		httpService.unregister(WEBAPP_ALIAS);
 		logger.info("Stopped Classic UI");
 	}
@@ -148,8 +129,6 @@ public class WebAppServlet extends BaseServlet {
 				// we are on some subpage, so we have to render the children of the widget that has been selected
 				Widget w = renderer.getItemUIRegistry().getWidget(sitemap, widgetId);
 				if(w!=null) {
-					String label = renderer.getItemUIRegistry().getLabel(w);
-					if (label==null) label = "undefined";
 					if(!(w instanceof LinkableWidget)) {
 						throw new RenderException("Widget '" + w + "' can not have any content");
 					}
@@ -159,8 +138,13 @@ public class WebAppServlet extends BaseServlet {
 						res.getWriter().append(getTimeoutResponse()).close();
 						return;
 					}
+					String label = renderer.getItemUIRegistry().getLabel(w);
+					if (label==null) label = "undefined";
 					result.append(renderer.processPage(renderer.getItemUIRegistry().getWidgetId(w), sitemapName, label, children, async));
 				}
+				
+			} else if (widgetId.equals("Colorpicker")) {
+				result.append("<root></root>");
 			}
 		} catch(RenderException e) {
 			throw new ServletException(e.getMessage(), e);
@@ -197,15 +181,15 @@ public class WebAppServlet extends BaseServlet {
 		for(GenericItem item : items) {			
 			item.addStateChangeListener(listener);
 		}
-		while(!listener.hasChangeOccurred() && !timeout) {
+		do {
 			timeout = (new Date()).getTime() - startTime > TIMEOUT_IN_MS;
 			try {
-				Thread.sleep(300);
+				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				timeout = true;
 				break;
 			}
-		}
+		} while(!listener.hasChangeOccurred() && !timeout);
 		for(GenericItem item : items) {
 			item.removeStateChangeListener(listener);
 		}
@@ -274,8 +258,9 @@ public class WebAppServlet extends BaseServlet {
 		 * {@inheritDoc}
 		 */
 		public void stateUpdated(Item item, State state) {
-			// ignore if the state did not change
+			changed = true;
 		}
+		
 	}
 	
 	
